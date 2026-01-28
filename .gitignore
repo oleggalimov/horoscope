@@ -1,0 +1,20 @@
+.idea
+# общие бинарники
+*.class
+*.jar
+*.war
+*.exe
+*.dll
+*.so
+*.dylib
+
+# архивы
+*.zip
+*.tar
+*.gz
+*.7z
+
+# IDE / build
+target/
+build/
+out/
