@@ -8,19 +8,38 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strconv"
+	"strings"
 )
 
 type bot struct {
 	token      string
 	updatesUrl string
+	Id         int
 }
 
 func newBot(token string) *bot {
+	botId, err := extractBotId(token)
+	if err != nil {
+		log.Fatal(err)
+	}
 	updatesUrl := fmt.Sprintf("https://api.telegram.org/bot%s/getUpdates?timeout=%d", token, 0)
-	return &bot{token, updatesUrl}
+	return &bot{
+		token,
+		updatesUrl,
+		botId,
+	}
 }
 
-func (bot *bot) getUpdates() (*[]model.Update, error) {
+func extractBotId(token string) (int, error) {
+	botId, err := strconv.Atoi(strings.Split(token, ":")[0])
+	if err != nil {
+		return -1, err
+	}
+	return botId, err
+}
+
+func (bot *bot) getUpdates() ([]model.Update, error) {
 
 	var response, err = http.Get(bot.updatesUrl)
 	if err != nil {
@@ -30,7 +49,7 @@ func (bot *bot) getUpdates() (*[]model.Update, error) {
 
 	bodyBytes, _ := io.ReadAll(response.Body)
 	response.Body.Close()
-	fmt.Printf("Ответ от сервера: %s\n", string(bodyBytes))
+	//fmt.Printf("Ответ от сервера: %s\n", string(bodyBytes))
 
 	updates := model.UpdatesResponse{}
 	unmarshallErr := json.Unmarshal(bodyBytes, &updates)
@@ -44,5 +63,5 @@ func (bot *bot) getUpdates() (*[]model.Update, error) {
 		return nil, errors.New("неуспешный ответ telegram")
 	}
 
-	return &updates.Result, nil
+	return updates.Result, nil
 }

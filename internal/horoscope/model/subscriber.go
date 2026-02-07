@@ -15,5 +15,14 @@ type Subscriber struct {
 	Type      Channel
 	Address   string
 	Sign      ZodiacSign
-	CreatedAt time.Time
+	CreatedAt *time.Time
+	Status    Status
 }
+
+type Status int
+
+const (
+	NEW      Status = -1
+	ACTIVE          = 1
+	INACTIVE        = 0
+)

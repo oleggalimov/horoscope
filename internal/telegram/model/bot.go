@@ -38,8 +38,8 @@ type User struct {
 }
 
 type ChatMember struct {
-	user   User
-	status string
+	User   User   `json:"user"`
+	Status string `json:"status"`
 }
 
 type Message struct {

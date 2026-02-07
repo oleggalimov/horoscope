@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"horoscope/internal/repositories/sqlrepo"
 	"horoscope/internal/telegram"
 	"log"
 	"os"
@@ -12,14 +12,10 @@ func main() {
 	if token == "" {
 		log.Fatalln("Токен телеграм-бота не передан!")
 	}
-	service := telegram.NewService(token)
+	service := telegram.NewService(token, sqlrepo.NewSubscriberRepo(nil))
 
-	updates, err := service.GetUpdates()
+	err := service.ProcessUpdates()
 	if err != nil {
-		return
+		log.Fatal(err)
 	}
-	for _, update := range *updates {
-		fmt.Println(update, " ")
-	}
-	fmt.Println()
 }
