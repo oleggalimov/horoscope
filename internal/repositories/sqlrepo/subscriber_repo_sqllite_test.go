@@ -4,11 +4,11 @@ import (
 	"context"
 	"database/sql"
 	_ "github.com/mattn/go-sqlite3"
+	"horoscope/internal/config"
 	"horoscope/internal/horoscope/model"
 	"log"
 	"os"
 	"testing"
-	"time"
 )
 
 var (
@@ -21,7 +21,7 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	migrateDb(db)
+	config.MigrateDb(db)
 	repo = NewSubscriberRepo(db)
 
 	//test
@@ -33,30 +33,13 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func migrateDb(db *sql.DB) {
-	query := `
-	CREATE TABLE IF NOT EXISTS subscribers (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		type TEXT NOT NULL,
-		address TEXT NOT NULL,
-		sign TEXT NOT NULL,
-		created_at DATETIME NOT NULL
-	);
-	`
-
-	_, err := db.Exec(query)
-	if err != nil {
-		log.Fatalf("failed to migrate DB: %v", err)
-	}
-}
-
 func TestSubscriberRepository_Add(t *testing.T) {
 	//GIVEN
 	subscriber := model.Subscriber{
 		Type:      model.Telegram,
 		Address:   "test_1",
 		Sign:      model.ZodiacSign("q1q"),
-		CreatedAt: time.Now(),
+		CreatedAt: nil,
 	}
 
 	//WHEN

@@ -14,6 +14,7 @@ type Subscriber struct {
 	ID        int64
 	Type      Channel
 	Address   string
+	ChannelId string
 	Sign      ZodiacSign
 	CreatedAt *time.Time
 	Status    Status

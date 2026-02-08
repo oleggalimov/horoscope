@@ -18,3 +18,5 @@
 target/
 build/
 out/
+/internal/config/config.yaml
+*.db

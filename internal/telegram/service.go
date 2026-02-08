@@ -1,6 +1,7 @@
 package telegram
 
 import (
+	"context"
 	"fmt"
 	_ "go/parser"
 	"horoscope/internal/horoscope"
@@ -11,12 +12,13 @@ import (
 )
 
 type Service struct {
-	bot *bot
-	dao horoscope.SubscribersDao
+	bot    *bot
+	dao    horoscope.SubscribersDao
+	offset int64
 }
 
 func NewService(token string, dao horoscope.SubscribersDao) *Service {
-	return &Service{newBot(token), dao}
+	return &Service{newBot(token), dao, 0}
 }
 
 func (s *Service) ProcessUpdates() error {
@@ -28,6 +30,7 @@ func (s *Service) ProcessUpdates() error {
 	statuses := make(map[model.Subscriber]model.Status)
 
 	for _, u := range updates {
+		s.offset = u.UpdateId
 		subs, st, isOk := mapToSubscriberWithStatus(u, s.bot.Id)
 		if isOk {
 			statuses[subs] = st
@@ -43,7 +46,21 @@ func (s *Service) ProcessUpdates() error {
 		subsByStatus[s] = append(subsByStatus[s], u)
 	}
 
-	fmt.Println("Пользователи по статусам: ", subsByStatus)
+	for k, v := range subsByStatus {
+		if len(v) == 0 {
+			continue
+		}
+		fmt.Printf("Обновляем %d пользователей на статус %s", len(v), k)
+		c, e := s.dao.BatchUpdateAll(context.Background(), v)
+		if e != nil {
+			fmt.Println("Не удалось провести обновление, %w", e)
+		} else {
+			fmt.Printf("Обновлено пользовтаелей: %d\n", c)
+		}
+		if k == model.ACTIVE {
+			//отправить приветствие
+		}
+	}
 
 	return nil
 
@@ -63,15 +80,8 @@ func mapToSubscriberWithStatus(u tgmodel.Update, botId int) (model.Subscriber, m
 		break
 	case commands.UNDEFINED:
 		if isBotKicked(u, botId) {
-			return model.Subscriber{
-				ID:        int64(u.MyChatMember.Chat.Id),
-				Type:      model.Telegram,
-				Address:   "@" + u.MyChatMember.Chat.Username,
-				CreatedAt: nil,
-				Status:    model.INACTIVE,
-			}, model.INACTIVE, true
+			status = model.INACTIVE
 		}
-		//fmt.Println("Не удалось определить команду: ", u)
 	}
 	if status == math.MinInt32 {
 		return model.Subscriber{}, model.INACTIVE, false
