@@ -40,6 +40,7 @@ func (s *Service) ProcessUpdates() error {
 	subsByStatus := make(map[model.Status][]model.Subscriber)
 
 	for u, s := range statuses {
+		u.Status = s
 		if subsByStatus[s] == nil {
 			subsByStatus[s] = make([]model.Subscriber, 0)
 		}
@@ -50,12 +51,13 @@ func (s *Service) ProcessUpdates() error {
 		if len(v) == 0 {
 			continue
 		}
-		fmt.Printf("Обновляем %d пользователей на статус %s", len(v), k)
+		fmt.Printf("Обновляем %d пользователей на статус %d\n", len(v), k)
+
 		c, e := s.dao.BatchUpdateAll(context.Background(), v)
 		if e != nil {
 			fmt.Println("Не удалось провести обновление, %w", e)
 		} else {
-			fmt.Printf("Обновлено пользовтаелей: %d\n", c)
+			fmt.Printf("Обновлено пользователей: %d\n", c)
 		}
 		if k == model.ACTIVE {
 			//отправить приветствие
@@ -80,23 +82,13 @@ func mapToSubscriberWithStatus(u tgmodel.Update, botId int) (model.Subscriber, m
 		break
 	case commands.UNDEFINED:
 		if isBotKicked(u, botId) {
-			status = model.INACTIVE
+			return mapToSubscriberFromChat(u.MyChatMember), model.BANNED, true
 		}
 	}
 	if status == math.MinInt32 {
 		return model.Subscriber{}, model.INACTIVE, false
 	}
-	return mapToSubscriber(u), status, true
-}
-
-func mapToSubscriber(u tgmodel.Update) model.Subscriber {
-	return model.Subscriber{
-		ID:        int64(u.Message.Chat.Id),
-		Type:      model.Telegram,
-		Address:   "@" + u.Message.From.Username,
-		CreatedAt: nil,
-		Status:    model.INACTIVE,
-	}
+	return mapToSubscriber(u.Message), status, true
 }
 
 func isBotKicked(u tgmodel.Update, botId int) bool {
@@ -104,4 +96,24 @@ func isBotKicked(u tgmodel.Update, botId int) bool {
 		return u.MyChatMember.NewChatMember.Status == "kicked"
 	}
 	return false
+}
+
+func mapToSubscriber(updateMsg tgmodel.Message) model.Subscriber {
+	return model.Subscriber{
+		ID:        int64(updateMsg.Chat.Id),
+		Type:      model.Telegram,
+		Address:   "@" + updateMsg.From.Username,
+		CreatedAt: nil,
+		Status:    model.INACTIVE,
+	}
+}
+
+func mapToSubscriberFromChat(chatMemberUpdated tgmodel.ChatMemberUpdated) model.Subscriber {
+	return model.Subscriber{
+		ID:        int64(chatMemberUpdated.Chat.Id),
+		Type:      model.Telegram,
+		Address:   "@" + chatMemberUpdated.From.Username,
+		CreatedAt: nil,
+		Status:    model.INACTIVE,
+	}
 }

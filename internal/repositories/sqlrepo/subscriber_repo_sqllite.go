@@ -143,9 +143,6 @@ func (sr *SubscriberRepository) BatchUpdateAll(ctx context.Context, subscribers 
 	ON CONFLICT(type, address) DO UPDATE SET
 		sign   = excluded.sign,
 		status = excluded.status
-	WHERE
-		subscribers.sign   IS NOT excluded.sign OR
-		subscribers.status IS NOT excluded.status
 	`, strings.Join(values, ","))
 
 	res, err := tx.ExecContext(ctx, query, args...)

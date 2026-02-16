@@ -26,4 +26,5 @@ const (
 	NEW      Status = -1
 	ACTIVE          = 1
 	INACTIVE        = 0
+	BANNED          = -2
 )
